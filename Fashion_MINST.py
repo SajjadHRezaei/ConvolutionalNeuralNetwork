@@ -50,4 +50,32 @@ model = keras.Sequential(
 )
 
 model.summary()
+##
 
+checkpoint = ModelCheckpoint( "best_model.hdf5", monitor='loss', verbose=1,
+    save_best_only=True, mode='auto', period=1)
+
+import datetime
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
+test_log_dir = 'logs/gradient_tape/' + current_time + '/test'
+train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+test_summary_writer = tf.summary.create_file_writer(test_log_dir)
+
+batch_size = 128
+epochs = 15
+model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1,callbacks=[tensorboard_callback, checkpoint])
+
+
+tensorboard --logdir logs/fit
+
+##
+score = model.evaluate(x_test, y_test, verbose=0)
+print("Test loss:", score[0])
+print("Test accuracy:", score[1])
+
+model.save('/content/model')
